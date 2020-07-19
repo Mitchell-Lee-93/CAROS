@@ -127,7 +127,7 @@ mavlink_hil_actuator_controls_t Simulator::actuator_controls_from_outputs()
 		}
 
 		for (unsigned i = 0; i < 16; i++) {
-			if (armed) {
+			if (_actuator_outputs.output[i] > PWM_DEFAULT_MIN / 2) {
 				if (i < n) {
 					/* scale PWM out PWM_DEFAULT_MIN..PWM_DEFAULT_MAX us to 0..1 for rotors */
 					msg.controls[i] = (_actuator_outputs.output[i] - PWM_DEFAULT_MIN) / (PWM_DEFAULT_MAX - PWM_DEFAULT_MIN);
@@ -147,7 +147,7 @@ mavlink_hil_actuator_controls_t Simulator::actuator_controls_from_outputs()
 		/* fixed wing: scale throttle to 0..1 and other channels to -1..1 */
 
 		for (unsigned i = 0; i < 16; i++) {
-			if (armed) {
+			if (_actuator_outputs.output[i] > PWM_DEFAULT_MIN / 2) {
 				if (i != 4) {
 					/* scale PWM out PWM_DEFAULT_MIN..PWM_DEFAULT_MAX us to -1..1 for normal channels */
 					msg.controls[i] = (_actuator_outputs.output[i] - pwm_center) / ((PWM_DEFAULT_MAX - PWM_DEFAULT_MIN) / 2);
@@ -167,10 +167,6 @@ mavlink_hil_actuator_controls_t Simulator::actuator_controls_from_outputs()
 	msg.mode = mode_flag_custom;
 	msg.mode |= (armed) ? mode_flag_armed : 0;
 	msg.flags = 0;
-
-#if defined(ENABLE_LOCKSTEP_SCHEDULER)
-	msg.flags |= 1;
-#endif
 
 	return msg;
 }
@@ -728,7 +724,7 @@ void Simulator::run()
 
 	} else {
 
-		PX4_INFO("Waiting for simulator to accept connection on TCP port %u", _port);
+		PX4_INFO("Waiting for simulator to connect on TCP port %u", _port);
 
 		while (true) {
 			if ((_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
@@ -1125,37 +1121,9 @@ int Simulator::publish_distance_topic(const mavlink_distance_sensor_t *dist_mavl
 	dist.current_distance = dist_mavlink->current_distance / 100.0f;
 	dist.type = dist_mavlink->type;
 	dist.id = dist_mavlink->id;
+	dist.orientation = dist_mavlink->orientation;
 	dist.variance = dist_mavlink->covariance * 1e-4f; // cm^2 to m^2
 	dist.signal_quality = -1;
-
-	switch (dist_mavlink->orientation) {
-	case MAV_SENSOR_ORIENTATION::MAV_SENSOR_ROTATION_PITCH_270:
-		dist.orientation = distance_sensor_s::ROTATION_DOWNWARD_FACING;
-		break;
-
-	case MAV_SENSOR_ORIENTATION::MAV_SENSOR_ROTATION_PITCH_90:
-		dist.orientation = distance_sensor_s::ROTATION_UPWARD_FACING;
-		break;
-
-	case MAV_SENSOR_ORIENTATION::MAV_SENSOR_ROTATION_PITCH_180:
-		dist.orientation = distance_sensor_s::ROTATION_BACKWARD_FACING;
-		break;
-
-	case MAV_SENSOR_ORIENTATION::MAV_SENSOR_ROTATION_NONE:
-		dist.orientation = distance_sensor_s::ROTATION_FORWARD_FACING;
-		break;
-
-	case MAV_SENSOR_ORIENTATION::MAV_SENSOR_ROTATION_YAW_270:
-		dist.orientation = distance_sensor_s::ROTATION_LEFT_FACING;
-		break;
-
-	case MAV_SENSOR_ORIENTATION::MAV_SENSOR_ROTATION_YAW_90:
-		dist.orientation = distance_sensor_s::ROTATION_RIGHT_FACING;
-		break;
-
-	default:
-		dist.orientation = distance_sensor_s::ROTATION_CUSTOM;
-	}
 
 	dist.h_fov = dist_mavlink->horizontal_fov;
 	dist.v_fov = dist_mavlink->vertical_fov;
@@ -1164,21 +1132,7 @@ int Simulator::publish_distance_topic(const mavlink_distance_sensor_t *dist_mavl
 	dist.q[2] = dist_mavlink->quaternion[2];
 	dist.q[3] = dist_mavlink->quaternion[3];
 
-	// New publishers will be created based on the sensor ID's being different or not
-	for (size_t i = 0; i < sizeof(_dist_sensor_ids) / sizeof(_dist_sensor_ids[0]); i++) {
-		if (_dist_pubs[i] && _dist_sensor_ids[i] == dist.id) {
-			_dist_pubs[i]->publish(dist);
-			break;
-
-		}
-
-		if (_dist_pubs[i] == nullptr) {
-			_dist_pubs[i] = new uORB::PublicationMulti<distance_sensor_s> {ORB_ID(distance_sensor)};
-			_dist_sensor_ids[i] = dist.id;
-			_dist_pubs[i]->publish(dist);
-			break;
-		}
-	}
+	_dist_pub.publish(dist);
 
 	return PX4_OK;
 }

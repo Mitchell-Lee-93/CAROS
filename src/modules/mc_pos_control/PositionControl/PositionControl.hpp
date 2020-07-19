@@ -49,6 +49,7 @@ struct PositionControlStates {
 	matrix::Vector3f velocity;
 	matrix::Vector3f acceleration;
 	float yaw;
+    float pitch; //added 2020.06.16
 };
 
 /**
@@ -170,7 +171,7 @@ public:
 	 * It needs to be executed by the attitude controller to achieve velocity and position tracking.
 	 * @param attitude_setpoint reference to struct to fill up
 	 */
-	void getAttitudeSetpoint(vehicle_attitude_setpoint_s &attitude_setpoint) const;
+    void getAttitudeSetpoint(vehicle_attitude_setpoint_s &attitude_setpoint, float current_alp) const;
 
 private:
 	bool _updateSuccessful();
@@ -200,6 +201,7 @@ private:
 	matrix::Vector3f _vel_dot; /**< velocity derivative (replacement for acceleration estimate) */
 	matrix::Vector3f _vel_int; /**< integral term of the velocity controller */
 	float _yaw{}; /**< current heading */
+    float _pitch{}; /**< current pitch */
 
 	vehicle_constraints_s _constraints{}; /**< variable constraints */
 

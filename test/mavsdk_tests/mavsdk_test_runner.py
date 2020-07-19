@@ -116,7 +116,7 @@ class Runner:
 
 
 class Px4Runner(Runner):
-    def __init__(self, model, workspace_dir, log_dir, speed_factor, debugger):
+    def __init__(self, model, workspace_dir, log_dir, speed_factor):
         super().__init__(log_dir)
         self.cmd = workspace_dir + "/build/px4_sitl_default/bin/px4"
         self.cwd = workspace_dir + "/build/px4_sitl_default/tmp/rootfs"
@@ -132,22 +132,6 @@ class Px4Runner(Runner):
                     "PX4_SIM_MODEL": model,
                     "PX4_SIM_SPEED_FACTOR": str(speed_factor)}
         self.log_prefix = "px4"
-
-        if not debugger:
-            pass
-        elif debugger == "valgrind":
-            self.args = ["--track-origins=yes", "--leak-check=full", "-v", self.cmd] + self.args
-            self.cmd = "valgrind"
-        elif debugger == "callgrind":
-            self.args = ["--tool=callgrind", "-v", self.cmd] + self.args
-            self.cmd = "valgrind"
-        elif debugger == "gdb":
-            self.args = ["--args", self.cmd] + self.args
-            self.cmd = "gdb"
-        else:
-            print("Using custom debugger " , debugger)
-            self.args = [self.cmd] + self.args
-            self.cmd = debugger
 
 
 class GzserverRunner(Runner):
@@ -208,8 +192,6 @@ def main():
                         help="Display gzclient with simulation")
     parser.add_argument("--model", type=str, default='all',
                         help="Specify which model to run")
-    parser.add_argument("--debugger", default="",
-                        help="valgrind callgrind gdb lldb")
     args = parser.parse_args()
 
     if not is_everything_ready():
@@ -325,7 +307,7 @@ def run_test_group(args):
 
 def run_test(test, group, args):
     px4_runner = Px4Runner(
-        group['model'], os.getcwd(), args.log_dir, args.speed_factor, args.debugger)
+        group['model'], os.getcwd(), args.log_dir, args.speed_factor)
     px4_runner.start(group)
 
     gzserver_runner = GzserverRunner(

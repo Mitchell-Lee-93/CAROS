@@ -34,7 +34,7 @@
 # required by other mixers
 add_subdirectory(Mixer)
 
-add_subdirectory(HelicopterMixer)
+#add_subdirectory(HelicopterMixer)
 add_subdirectory(MultirotorMixer)
 add_subdirectory(NullMixer)
 add_subdirectory(SimpleMixer)
@@ -48,7 +48,7 @@ add_library(mixer
 
 target_link_libraries(mixer
 	PRIVATE
-		HelicopterMixer
+		#HelicopterMixer
 		MultirotorMixer
 		NullMixer
 		SimpleMixer

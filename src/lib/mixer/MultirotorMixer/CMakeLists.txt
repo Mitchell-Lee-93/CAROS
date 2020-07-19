@@ -32,28 +32,9 @@
 ############################################################################
 
 set(geometry_files
-	dodeca_bottom_cox.toml
-	dodeca_top_cox.toml
 	hex_cox.toml
-	hex_plus.toml
-	hex_t.toml
-	hex_x.toml
-	octa_cox.toml
-	octa_cox_wide.toml
-	octa_plus.toml
-	octa_x.toml
-	quad_deadcat.toml
-	quad_h.toml
-	quad_plus.toml
-	quad_s250aq.toml
-	quad_vtail.toml
+	quad_x.toml	
 	quad_wide.toml
-	quad_x_cw.toml
-	quad_x.toml
-	quad_x_pusher.toml
-	quad_y.toml
-	tri_y.toml
-	twin_engine.toml
 )
 
 set(geometries_list)
@@ -84,13 +65,9 @@ add_custom_command(
 	)
 add_custom_target(mixer_gen_6dof DEPENDS mixer_multirotor_6dof.generated.h)
 
-add_library(MultirotorMixer
+px4_add_library(MultirotorMixer
 	MultirotorMixer.cpp
 	MultirotorMixer.hpp
-
-	${CMAKE_CURRENT_BINARY_DIR}/mixer_multirotor.generated.h
-	${CMAKE_CURRENT_BINARY_DIR}/mixer_multirotor_normalized.generated.h
-	${CMAKE_CURRENT_BINARY_DIR}/mixer_multirotor_6dof.generated.h
 )
 target_link_libraries(MultirotorMixer PRIVATE Mixer)
 target_include_directories(MultirotorMixer PRIVATE ${CMAKE_CURRENT_BINARY_DIR})

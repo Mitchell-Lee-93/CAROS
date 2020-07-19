@@ -14,6 +14,7 @@ set MIXER_AUX_FILE none
 set OUTPUT_AUX_DEV /dev/pwm_output1
 set OUTPUT_DEV none
 
+echo "000"
 #
 # If mount (gimbal) control is enabled and output mode is AUX, set the aux
 # mixer to mount (override the airframe-specific MIXER_AUX setting).
@@ -25,7 +26,7 @@ then
                 set MIXER_AUX mount
         fi
 fi
-
+echo "001"
 # USE_IO is set to 'no' for all boards w/o px4io driver or SYS_USE_IO disabled
 if [ $USE_IO = no ]
 then
@@ -58,7 +59,7 @@ then
 		fi
 	fi
 fi
-
+echo "002"
 #
 # If OUTPUT_MODE = none then something is wrong with setup and we shouldn't try to enable output.
 #
@@ -121,11 +122,12 @@ then
 	then
 		if [ $OUTPUT_MODE != io ]
 		then
+			echo "rc on"
 			sh /etc/init.d/rc.io
 		fi
 	fi
 fi
-
+echo "003"
 if [ $MIXER != none -a $MIXER != skip ]
 then
 	#
@@ -187,7 +189,7 @@ else
 		tune_control play -t 20
 	fi
 fi
-
+echo "004"
 if [ $MIXER_AUX != none -a $AUX_MODE != none ]
 then
 	#
@@ -321,7 +323,7 @@ then
 		fi
 	fi
 fi
-
+echo "005"
 if [ $OUTPUT_MODE = fmu -o $OUTPUT_MODE = io ]
 then
 	if [ $PWM_OUT != none ]

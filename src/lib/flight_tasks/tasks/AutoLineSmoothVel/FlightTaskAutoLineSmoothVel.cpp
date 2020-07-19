@@ -237,9 +237,8 @@ float FlightTaskAutoLineSmoothVel::_getMaxZSpeed() const
 
 void FlightTaskAutoLineSmoothVel::_prepareSetpoints()
 {
-	// Interface: A valid position setpoint generates a velocity target using conservative motion constraints.
-	// If a velocity is specified, that is used as a feedforward to track the position setpoint
-	// (ie. it assumes the position setpoint is moving at the specified velocity)
+	// Interface: A valid position setpoint generates a velocity target using a P controller. If a velocity is specified
+	// that one is used as a velocity limit.
 	// If the position setpoints are set to NAN, the values in the velocity setpoints are used as velocity targets: nothing to do here.
 
 	_want_takeoff = false;
@@ -267,9 +266,9 @@ void FlightTaskAutoLineSmoothVel::_prepareSetpoints()
 			math::trajectory::clampToZNorm(vel_sp_constrained, z_speed);
 
 			for (int i = 0; i < 3; i++) {
-				// If available, use the existing velocity as a feedforward, otherwise replace it
+				// If available, constrain the velocity using _velocity_setpoint(.)
 				if (PX4_ISFINITE(_velocity_setpoint(i))) {
-					_velocity_setpoint(i) += vel_sp_constrained(i);
+					_velocity_setpoint(i) = _constrainOneSide(vel_sp_constrained(i), _velocity_setpoint(i));
 
 				} else {
 					_velocity_setpoint(i) = vel_sp_constrained(i);
@@ -288,9 +287,9 @@ void FlightTaskAutoLineSmoothVel::_prepareSetpoints()
 			Vector2f vel_sp_constrained_xy = u_pos_traj_to_dest_xy * _getMaxXYSpeed();
 
 			for (int i = 0; i < 2; i++) {
-				// If available, use the existing velocity as a feedforward, otherwise replace it
+				// If available, constrain the velocity using _velocity_setpoint(.)
 				if (PX4_ISFINITE(_velocity_setpoint(i))) {
-					_velocity_setpoint(i) += vel_sp_constrained_xy(i);
+					_velocity_setpoint(i) = _constrainOneSide(vel_sp_constrained_xy(i), _velocity_setpoint(i));
 
 				} else {
 					_velocity_setpoint(i) = vel_sp_constrained_xy(i);
@@ -304,9 +303,9 @@ void FlightTaskAutoLineSmoothVel::_prepareSetpoints()
 			const float z_dir = math::sign(_position_setpoint(2) - _trajectory[2].getCurrentPosition());
 			const float vel_sp_z = z_dir * _getMaxZSpeed();
 
-			// If available, use the existing velocity as a feedforward, otherwise replace it
+			// If available, constrain the velocity using _velocity_setpoint(.)
 			if (PX4_ISFINITE(_velocity_setpoint(2))) {
-				_velocity_setpoint(2) += vel_sp_z;
+				_velocity_setpoint(2) = _constrainOneSide(vel_sp_z, _velocity_setpoint(2));
 
 			} else {
 				_velocity_setpoint(2) = vel_sp_z;
@@ -329,20 +328,8 @@ void FlightTaskAutoLineSmoothVel::_updateTrajConstraints()
 	_trajectory[2].setMaxJerk(_param_mpc_jerk_auto.get());
 
 	if (_velocity_setpoint(2) < 0.f) { // up
-		float z_accel_constraint = _param_mpc_acc_up_max.get();
-		float z_vel_constraint = _param_mpc_z_vel_max_up.get();
-
-		// The constraints are broken because they are used as hard limits by the position controller, so put this here
-		// until the constraints don't do things like cause controller integrators to saturate. Once the controller
-		// doesn't use z speed constraints, this can go in AutoMapper::_prepareTakeoffSetpoints(). Accel limit is to
-		// emulate the motor ramp (also done in the controller) so that the controller can actually track the setpoint.
-		if (_type == WaypointType::takeoff &&  _dist_to_ground < _param_mpc_land_alt1.get()) {
-			z_vel_constraint = _param_mpc_tko_speed.get();
-			z_accel_constraint = math::min(z_accel_constraint, _param_mpc_tko_speed.get() / _param_mpc_tko_ramp_t.get());
-		}
-
-		_trajectory[2].setMaxVel(z_vel_constraint);
-		_trajectory[2].setMaxAccel(z_accel_constraint);
+		_trajectory[2].setMaxAccel(_param_mpc_acc_up_max.get());
+		_trajectory[2].setMaxVel(_param_mpc_z_vel_max_up.get());
 
 	} else { // down
 		_trajectory[2].setMaxAccel(_param_mpc_acc_down_max.get());

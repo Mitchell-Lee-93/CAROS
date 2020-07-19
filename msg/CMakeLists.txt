@@ -162,6 +162,7 @@ set(msg_files
 	vtol_vehicle_status.msg
 	wheel_encoders.msg
 	wind_estimate.msg
+	key_command.msg
 )
 
 set(deprecated_msgs

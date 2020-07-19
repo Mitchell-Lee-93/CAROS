@@ -203,7 +203,7 @@ MulticopterRateControl::Run()
 			_landing_gear_sub.update(&_landing_gear);
 		}
 
-		if (manual_rate_sp) {
+        if (manual_rate_sp) { //if manual mode
 			if (manual_control_updated) {
 
 				// manual rates control - ACRO mode
@@ -219,7 +219,7 @@ MulticopterRateControl::Run()
 				vehicle_rates_setpoint_s v_rates_sp{};
 				v_rates_sp.roll = _rates_sp(0);
 				v_rates_sp.pitch = _rates_sp(1);
-				v_rates_sp.yaw = _rates_sp(2);
+                v_rates_sp.yaw = _rates_sp(2);
 				v_rates_sp.thrust_body[0] = 0.0f;
 				v_rates_sp.thrust_body[1] = 0.0f;
 				v_rates_sp.thrust_body[2] = -_thrust_sp;
@@ -229,14 +229,15 @@ MulticopterRateControl::Run()
 			}
 
 		} else {
-			// use rates setpoint topic
+            // use rates setpoint topic, from att_ctrl
 			vehicle_rates_setpoint_s v_rates_sp;
 
 			if (_v_rates_sp_sub.update(&v_rates_sp)) {
 				_rates_sp(0) = v_rates_sp.roll;
 				_rates_sp(1) = v_rates_sp.pitch;
 				_rates_sp(2) = v_rates_sp.yaw;
-				_thrust_sp = -v_rates_sp.thrust_body[2];
+                _thrust_sp_x = v_rates_sp.thrust_body[0]; //2020.02.15 added
+                _thrust_sp = -v_rates_sp.thrust_body[2];
 			}
 		}
 
@@ -286,11 +287,17 @@ MulticopterRateControl::Run()
 			// publish actuator controls
 			actuator_controls_s actuators{};
 			actuators.control[actuator_controls_s::INDEX_ROLL] = PX4_ISFINITE(att_control(0)) ? att_control(0) : 0.0f;
-			actuators.control[actuator_controls_s::INDEX_PITCH] = PX4_ISFINITE(att_control(1)) ? att_control(1) : 0.0f;
+            //actuators.control[actuator_controls_s::INDEX_PITCH] = (PX4_ISFINITE(att_control(1)) ? att_control(1) : 0.0f)*0.1f;
+            actuators.control[actuator_controls_s::INDEX_PITCH] = 0.1f*(PX4_ISFINITE(att_control(1)) ? att_control(1) : 0.0f);//2020.07.16 added to scale My
 			actuators.control[actuator_controls_s::INDEX_YAW] = PX4_ISFINITE(att_control(2)) ? att_control(2) : 0.0f;
 			actuators.control[actuator_controls_s::INDEX_THROTTLE] = PX4_ISFINITE(_thrust_sp) ? _thrust_sp : 0.0f;
+            //actuators.control[actuator_controls_s::INDEX_FLAPS] = PX4_ISFINITE(_thrust_sp_x) ? -_thrust_sp_x : 0.0f;//index4, added 2020.02.25
+            actuators.control[actuator_controls_s::INDEX_FLAPS] = PX4_ISFINITE(_thrust_sp_x) ? -_thrust_sp_x : 0.0f;//2020.06.16 direction change
 			actuators.control[actuator_controls_s::INDEX_LANDING_GEAR] = (float)_landing_gear.landing_gear;
 			actuators.timestamp_sample = angular_velocity.timestamp_sample;
+
+            //PX4_INFO("F_z_act : %f", (double) actuators.control[actuator_controls_s::INDEX_THROTTLE] );
+            //PX4_INFO("F_x_act : %f", (double) actuators.control[actuator_controls_s::INDEX_FLAPS] );
 
 			// scale effort by battery status if enabled
 			if (_param_mc_bat_scale_en.get()) {
@@ -309,8 +316,40 @@ MulticopterRateControl::Run()
 				}
 			}
 
+			//added 2020.03.04
+//            if(actuators.control[actuator_controls_s::INDEX_PITCH]<-0.05f)actuators.control[actuator_controls_s::INDEX_PITCH]=-0.05f;
+//                else if(actuators.control[actuator_controls_s::INDEX_PITCH]>0.05f)actuators.control[actuator_controls_s::INDEX_PITCH]=0.05f;
+            if(actuators.control[actuator_controls_s::INDEX_FLAPS]<0.00001f)actuators.control[actuator_controls_s::INDEX_FLAPS]=0.0f;//2020.06.16 added to limit F_x input
+
 			actuators.timestamp = hrt_absolute_time();
 			_actuators_0_pub.publish(actuators);
+
+            //added 2020.07.16 to check alp
+            PX4_INFO("My : %f \n", (double) actuators.control[actuator_controls_s::INDEX_PITCH] );
+            PX4_INFO("Fx : %f \n", (double) actuators.control[actuator_controls_s::INDEX_FLAPS] );
+            PX4_INFO("Fz : %f \n", (double) actuators.control[actuator_controls_s::INDEX_THROTTLE]);
+
+            //alp pub added 03.02
+            float My = actuators.control[actuator_controls_s::INDEX_PITCH];
+            float Fz = actuators.control[actuator_controls_s::INDEX_THROTTLE];
+            float Fx = actuators.control[actuator_controls_s::INDEX_FLAPS];
+            //float alp = -2.0f*atanf((21.0f*Fz - 5.0f*Fx + 100.0f*My - sqrtf((297.0f*Fx*Fx-210.0f*Fx*Fz + 1000.0f*Fx*My + 441.0f*Fz*Fz + 4200.0f*Fz*My + 10000.0f*My*My)))/(8.0f*Fx));
+            float alp = 2.0f*atanf(((65.0f*Fx)/8.0f - (273.0f*Fz)/8.0f + (325.0f*My)/2.0f + 17.0f*sqrtf((50193.0f*Fx*Fx)/18496.0f - (17745.0f*Fx*Fz)/9248.0f + (21125.0f*Fx*My)/2312.0f + (74529.0f*Fz*Fz)/18496.0f - (88725.0f*Fz*My)/2312.0f + (105625.0f*My*My)/1156.0f))/(13.0f*Fx));
+            //PX4_INFO("alp : %f", (double) alp );
+                         alp = (!PX4_ISFINITE(alp)?0.0f:alp);
+                         if(alp<0.0f||alp>2.0f){ // impossible case added
+                             alp=0.0f;
+                         }
+                         else if (alp>1.0f){ // exceeding hardware limit, 150<alp<180
+                             alp=1.0f;
+                         }
+                         if(sqrtf(Fx*Fx+Fz*Fz)<0.4f){//when take off or landing
+                              alp = 0.0f;
+                         }
+ PX4_INFO("alp : %f \n", (double) alp );
+             _servo.servo_angle=alp;
+             _servo.timestamp=hrt_absolute_time();
+             _key_command_pub.publish(_servo);
 
 		} else if (_v_control_mode.flag_control_termination_enabled) {
 			if (!_vehicle_status.is_vtol) {

@@ -33,7 +33,7 @@
 
 add_library(drivers_board
 	init.c
-	timer_config.cpp
+	timer_config.c
 )
 
 target_link_libraries(drivers_board

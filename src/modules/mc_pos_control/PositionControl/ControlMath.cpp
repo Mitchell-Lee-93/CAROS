@@ -44,62 +44,160 @@ using namespace matrix;
 
 namespace ControlMath
 {
-void thrustToAttitude(const Vector3f &thr_sp, const float yaw_sp, vehicle_attitude_setpoint_s &att_sp)
+//original code
+//void thrustToAttitude(const Vector3f &thr_sp, const float yaw_sp, vehicle_attitude_setpoint_s &att_sp)
+//{
+
+//    bodyzToAttitude(-(thr_sp-Vector3f(thr_sp(0),0,0)), yaw_sp, att_sp);//body_z except thr_x
+//    //thr_sp, yaw_sp -> att_sp, same func but opposite direction
+
+//    //att_sp.thrust_body[2] = -thr_sp.length(); // all three axies are coupled
+//    att_sp.thrust_body[0] = -thr_sp(0);//I guess?
+//    if(fabsf(att_sp.thrust_body[0])<0.0001f) att_sp.thrust_body[0]=0.0f;//added 2020.06.15, becuz of error with small F_x term
+//    att_sp.thrust_body[2] = -sqrtf(thr_sp(1)*thr_sp(1)+thr_sp(2)*thr_sp(2));
+//    //only y,z are coupled, thr_sp(1) : F_y in inertial frame, added 2020.02.14
+//}
+
+//void bodyzToAttitude(Vector3f body_z, const float yaw_sp, vehicle_attitude_setpoint_s &att_sp)
+//{
+//	// zero vector, no direction, set safe level value
+//	if (body_z.norm_squared() < FLT_EPSILON) {
+//		body_z(2) = 1.f;
+//	}
+
+//    body_z.normalize();//z-axis of desired thrust in body frame
+
+//    // vector of desired yaw direction in XY plane(in body frame), rotated by PI/2
+//    Vector3f y_C(-sinf(yaw_sp), cosf(yaw_sp), 0.0f);//yaw in XY plane
+
+//	// desired body_x axis, orthogonal to body_z
+//    Vector3f body_x = y_C % body_z; //cross product
+
+//	// keep nose to front while inverted upside down
+//	if (body_z(2) < 0.0f) {
+//		body_x = -body_x;
+//	}
+
+//	if (fabsf(body_z(2)) < 0.000001f) {
+//		// desired thrust is in XY plane, set X downside to construct correct matrix,
+//		// but yaw component will not be used actually
+//		body_x.zero();
+//		body_x(2) = 1.0f;
+//	}
+
+//	body_x.normalize();
+
+//	// desired body_y axis
+//	Vector3f body_y = body_z % body_x;
+
+//	Dcmf R_sp;
+
+//	// fill rotation matrix
+//	for (int i = 0; i < 3; i++) {
+//		R_sp(i, 0) = body_x(i);
+//		R_sp(i, 1) = body_y(i);
+//		R_sp(i, 2) = body_z(i);
+//	}
+
+//	// copy quaternion setpoint to attitude setpoint topic
+//	Quatf q_sp = R_sp;
+//	q_sp.copyTo(att_sp.q_d);
+//	att_sp.q_d_valid = true;
+
+//    // calculate euler angles, for logging only, must not be used for control
+//	Eulerf euler = R_sp;
+//	att_sp.roll_body = euler(0);
+//	att_sp.pitch_body = euler(1);
+//	att_sp.yaw_body = euler(2);
+
+void thrustToAttitude(const Vector3f &thr_sp, const float yaw_sp, const float pitch_current,const float alp_current, vehicle_attitude_setpoint_s &att_sp) //modified 2020.06.16
 {
-	bodyzToAttitude(-thr_sp, yaw_sp, att_sp);
-	att_sp.thrust_body[2] = -thr_sp.length();
+
+//    bodyzToAttitude(-(thr_sp-Vector3f(thr_sp(0),0,0)), yaw_sp, att_sp);//body_z except thr_x
+//    //thr_sp, yaw_sp -> att_sp, same func but opposite direction
+
+//    //att_sp.thrust_body[2] = -thr_sp.length(); // all three axies are coupled
+//    att_sp.thrust_body[0] = -thr_sp(0);//I guess?
+//    if(fabsf(att_sp.thrust_body[0])<0.0001f) att_sp.thrust_body[0]=0.0f;//added 2020.06.15, becuz of error with small F_x term
+//    att_sp.thrust_body[2] = -sqrtf(thr_sp(1)*thr_sp(1)+thr_sp(2)*thr_sp(2));
+//    //only y,z are coupled, thr_sp(1) : F_y in inertial frame, added 2020.02.14
+
+    //modified 2020.06.16, initial frame to body frame
+    if (alp_current>0.0f && alp_current<1.0f) //added 2020.07.19 if alp exist, run x-pitch decouple
+    {
+    bodyzToAttitude(-(thr_sp-Vector3f(thr_sp(0),0,0)), yaw_sp, att_sp);//body_z except thr_x
+    float x_tmp = -thr_sp(0); //tmp body frame to make thr_y = 0
+    float z_tmp = -sqrtf(thr_sp(1)*thr_sp(1)+thr_sp(2)*thr_sp(2));//-0.4f; //tmp body frame to make thr_y = 0 for test
+    //PX4_INFO("thr_x_raw : %f", (double)x_tmp);
+    //PX4_INFO("thr_z_raw : %f", (double)z_tmp);
+    double pitch_deg = pitch_current*180.0f/3.14f;
+    PX4_INFO("pitch_deg : %f \n", (double)pitch_deg); //added 2020.07.16
+    att_sp.thrust_body[0] = x_tmp*cosf(pitch_current)-z_tmp*sinf(pitch_current); //rotate temp body frame theta to make full body frame
+    if(fabsf(att_sp.thrust_body[0])<0.0001f) att_sp.thrust_body[0]=0.0f;//added 2020.06.16, becuz of error with small F_x term
+    att_sp.thrust_body[2] = x_tmp*sinf(pitch_current)+z_tmp*cosf(pitch_current);
+
+    //PX4_INFO("thr_x : %f", (double)att_sp.thrust_body[0] );
+    //PX4_INFO("thr_z : %f", (double)att_sp.thrust_body[2] );
+    }
+    else //added 2020.07.19 if alp doesn't exist, run x-pitch couple
+    {
+        bodyzToAttitude(-thr_sp, yaw_sp, att_sp);
+        att_sp.thrust_body[0] = 0.0f; // resest Fx
+        att_sp.thrust_body[2] = -thr_sp.length();
+    }
 }
 
 void bodyzToAttitude(Vector3f body_z, const float yaw_sp, vehicle_attitude_setpoint_s &att_sp)
 {
-	// zero vector, no direction, set safe level value
-	if (body_z.norm_squared() < FLT_EPSILON) {
-		body_z(2) = 1.f;
-	}
+    // zero vector, no direction, set safe level value
+    if (body_z.norm_squared() < FLT_EPSILON) {
+        body_z(2) = 1.f;
+    }
 
-	body_z.normalize();
+    body_z.normalize();//z-axis of desired thrust in body frame
 
-	// vector of desired yaw direction in XY plane, rotated by PI/2
-	Vector3f y_C(-sinf(yaw_sp), cosf(yaw_sp), 0.0f);
+    // vector of desired yaw direction in XY plane(in body frame), rotated by PI/2
+    Vector3f y_C(-sinf(yaw_sp), cosf(yaw_sp), 0.0f);//yaw in XY plane
 
-	// desired body_x axis, orthogonal to body_z
-	Vector3f body_x = y_C % body_z;
+    // desired body_x axis, orthogonal to body_z
+    Vector3f body_x = y_C % body_z; //cross product
 
-	// keep nose to front while inverted upside down
-	if (body_z(2) < 0.0f) {
-		body_x = -body_x;
-	}
+    // keep nose to front while inverted upside down
+    if (body_z(2) < 0.0f) {
+        body_x = -body_x;
+    }
 
-	if (fabsf(body_z(2)) < 0.000001f) {
-		// desired thrust is in XY plane, set X downside to construct correct matrix,
-		// but yaw component will not be used actually
-		body_x.zero();
-		body_x(2) = 1.0f;
-	}
+    if (fabsf(body_z(2)) < 0.000001f) {
+        // desired thrust is in XY plane, set X downside to construct correct matrix,
+        // but yaw component will not be used actually
+        body_x.zero();
+        body_x(2) = 1.0f;
+    }
 
-	body_x.normalize();
+    body_x.normalize();
 
-	// desired body_y axis
-	Vector3f body_y = body_z % body_x;
+    // desired body_y axis
+    Vector3f body_y = body_z % body_x;
 
-	Dcmf R_sp;
+    Dcmf R_sp;
 
-	// fill rotation matrix
-	for (int i = 0; i < 3; i++) {
-		R_sp(i, 0) = body_x(i);
-		R_sp(i, 1) = body_y(i);
-		R_sp(i, 2) = body_z(i);
-	}
+    // fill rotation matrix
+    for (int i = 0; i < 3; i++) {
+        R_sp(i, 0) = body_x(i);
+        R_sp(i, 1) = body_y(i);
+        R_sp(i, 2) = body_z(i);
+    }
 
-	// copy quaternion setpoint to attitude setpoint topic
-	Quatf q_sp = R_sp;
-	q_sp.copyTo(att_sp.q_d);
+    // copy quaternion setpoint to attitude setpoint topic
+    Quatf q_sp = R_sp;
+    q_sp.copyTo(att_sp.q_d);
+    att_sp.q_d_valid = true;
 
-	// calculate euler angles, for logging only, must not be used for control
-	Eulerf euler = R_sp;
-	att_sp.roll_body = euler(0);
-	att_sp.pitch_body = euler(1);
-	att_sp.yaw_body = euler(2);
+    // calculate euler angles, for logging only, must not be used for control
+    Eulerf euler = R_sp;
+    att_sp.roll_body = euler(0);
+    att_sp.pitch_body = euler(1);
+    att_sp.yaw_body = euler(2);
 }
 
 Vector2f constrainXY(const Vector2f &v0, const Vector2f &v1, const float &max)
@@ -240,5 +338,4 @@ void setZeroIfNanVector3f(Vector3f &vector)
 	// Adding zero vector overwrites elements that are NaN with zero
 	addIfNotNanVector3f(vector, Vector3f());
 }
-
-} // ControlMath
+}//control math

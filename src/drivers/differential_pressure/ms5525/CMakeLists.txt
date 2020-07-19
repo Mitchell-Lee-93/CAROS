@@ -39,5 +39,4 @@ px4_add_module(
 		MS5525_main.cpp
 	DEPENDS
 		drivers__airspeed
-		mathlib
 	)

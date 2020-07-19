@@ -21,9 +21,13 @@ public:
 	void trigger(bool trigger_on_true);
 
 	void info();
+#if defined(GPIO_GPIO5_OUTPUT)
+	static const int ngpios = 6;
+#else
+	static const int ngpios = 5;
+#endif
 
 private:
-	static const int num_gpios = DIRECT_PWM_OUTPUT_CHANNELS > 6 ? 6 : DIRECT_PWM_OUTPUT_CHANNELS;
 
 	void setup();
 
@@ -31,7 +35,18 @@ private:
 
 	bool _trigger_invert;
 
-	uint32_t _triggers[num_gpios];
+	static constexpr uint32_t _gpios[ngpios] = {
+		GPIO_GPIO0_OUTPUT,
+		GPIO_GPIO1_OUTPUT,
+		GPIO_GPIO2_OUTPUT,
+		GPIO_GPIO3_OUTPUT,
+		GPIO_GPIO4_OUTPUT,
+#if defined(GPIO_GPIO5_OUTPUT)
+		GPIO_GPIO5_OUTPUT
+#endif
+	};
+
+	uint32_t _triggers[arraySize(_gpios)];
 };
 
 #endif /* ifdef __PX4_NUTTX */

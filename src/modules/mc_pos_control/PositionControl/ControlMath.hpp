@@ -51,7 +51,7 @@ namespace ControlMath
  * @param yaw_sp the desired yaw
  * @param att_sp attitude setpoint to fill
  */
-void thrustToAttitude(const matrix::Vector3f &thr_sp, const float yaw_sp, vehicle_attitude_setpoint_s &att_sp);
+void thrustToAttitude(const matrix::Vector3f &thr_sp, const float yaw_sp, const float pitch_current,float alp_current, vehicle_attitude_setpoint_s &att_sp);
 /**
  * Converts a body z vector and yaw set-point to a desired attitude.
  * @param body_z a world frame 3D vector in direction of the desired body z axis

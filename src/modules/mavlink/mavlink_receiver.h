@@ -118,6 +118,8 @@ public:
 private:
 
 	void acknowledge(uint8_t sysid, uint8_t compid, uint16_t command, uint8_t result);
+//	void handle_message_key_command(mavlink_message_t *msg);
+//	orb_advert_t _key_command_pub{nullptr};
 
 	/**
 	 * Common method to handle both mavlink command types. T is one of mavlink_command_int_t or mavlink_command_long_t.
@@ -270,7 +272,7 @@ private:
 	uORB::Subscription	_parameter_update_sub{ORB_ID(parameter_update)};
 	uORB::Subscription	_vehicle_attitude_sub{ORB_ID(vehicle_attitude)};
 	uORB::Subscription	_vehicle_local_position_sub{ORB_ID(vehicle_local_position)};
-	uORB::Subscription	_vehicle_status_sub{ORB_ID(vehicle_status)};
+    uORB::Subscription	_vehicle_status_sub{ORB_ID(vehicle_status)};
 
 	// hil_sensor and hil_state_quaternion
 	PX4Accelerometer *_px4_accel{nullptr};

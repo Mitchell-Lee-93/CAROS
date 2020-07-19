@@ -38,13 +38,13 @@ px4_add_board(
 		lights/blinkm
 		lights/rgbled
 		lights/rgbled_ncp5623c
-		lights/rgbled_pwm
+		#lights/rgbled_pwm
 		magnetometer # all available magnetometer drivers
 		mkblctrl
 		optical_flow # all available optical flow drivers
 		#osd
 		pca9685
-		power_monitor/ina226
+		#power_monitor/ina226
 		#protocol_splitter
 		pwm_input
 		pwm_out_sim
@@ -91,7 +91,7 @@ px4_add_board(
 	SYSTEMCMDS
 		bl_update
 		config
-		dmesg
+		#dmesg
 		dumpfile
 		esc_calib
 		hardfault_log
@@ -109,7 +109,7 @@ px4_add_board(
 		reflect
 		sd_bench
 		shutdown
-		tests # tests and test runner
+		#tests # tests and test runner
 		top
 		topic_listener
 		tune_control

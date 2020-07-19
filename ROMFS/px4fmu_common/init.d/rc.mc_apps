@@ -12,6 +12,7 @@
 #
 # LPE
 #
+echo "1"
 if param compare SYS_MC_EST_GROUP 1
 then
 	#
@@ -47,23 +48,24 @@ fi
 ###############################################################################
 #                        End Estimator Group Selection                        #
 ###############################################################################
-
+echo "20"
 #
 # Start Multicopter Rate Controller.
 #
 mc_rate_control start
-
+echo "21"
 #
 # Start Multicopter Attitude Controller.
 #
 mc_att_control start
-
+echo "22"
 #
 # Start Multicopter Position Controller.
 #
 mc_pos_control start
-
+echo "23"
 #
 # Start Multicopter Land Detector.
 #
 land_detector start multicopter
+echo "3"

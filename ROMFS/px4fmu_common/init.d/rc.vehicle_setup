@@ -77,9 +77,10 @@ then
 	# Set the mav type parameter.
 	param set MAV_TYPE ${MAV_TYPE}
 
+echo "00"
 	# Load mixer and configure outputs.
 	sh /etc/init.d/rc.interface
-
+echo "01"
 	# Start standard multicopter apps.
 	sh /etc/init.d/rc.mc_apps
 fi

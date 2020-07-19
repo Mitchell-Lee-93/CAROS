@@ -214,6 +214,7 @@ MulticopterAttitudeControl::generate_attitude_setpoint(float dt, bool reset_yaw_
 	/* copy quaternion setpoint to attitude setpoint topic */
 	Quatf q_sp = Eulerf(attitude_setpoint.roll_body, attitude_setpoint.pitch_body, attitude_setpoint.yaw_body);
 	q_sp.copyTo(attitude_setpoint.q_d);
+	attitude_setpoint.q_d_valid = true;
 
 	attitude_setpoint.thrust_body[2] = -throttle_curve(_manual_control_sp.z);
 	attitude_setpoint.timestamp = hrt_absolute_time();
@@ -229,8 +230,10 @@ MulticopterAttitudeControl::generate_attitude_setpoint(float dt, bool reset_yaw_
 void
 MulticopterAttitudeControl::control_attitude()
 {
-	_v_att_sp_sub.update(&_v_att_sp);
-	_rates_sp = _attitude_control.update(Quatf(_v_att.q), Quatf(_v_att_sp.q_d), _v_att_sp.yaw_sp_move_rate);
+    _v_att_sp_sub.update(&_v_att_sp);//get v_att_sp from pos_ctrl
+    //PX4_INFO("yaw_rate_input %f", (double)_v_att_sp.yaw_sp_move_rate);//-2.6~2.6
+    _rates_sp = _attitude_control.update(Quatf(_v_att.q), Quatf(_v_att_sp.q_d), _v_att_sp.yaw_sp_move_rate);//generate rate
+    //PX4_INFO("yaw_rate_output %f", (double) _rates_sp(1));// added 2020.06.24. should be gain*yaw_rate_input
 }
 
 void
@@ -326,10 +329,13 @@ MulticopterAttitudeControl::Run()
 			control_attitude();
 
 			if (_v_control_mode.flag_control_yawrate_override_enabled) {
-				/* Yaw rate override enabled, overwrite the yaw setpoint */
-				_v_rates_sp_sub.update(&_v_rates_sp);
+                /* Yaw rate override enabled, overwrite the yaw setpoint
+                 * I think it's true when I use offboard
+                 whre yaw is updated -> no yaw update and only pitch update*/
+
+                _v_rates_sp_sub.update(&_v_rates_sp);
 				const auto yawrate_reference = _v_rates_sp.yaw;
-				_rates_sp(2) = yawrate_reference;
+                _rates_sp(1) = yawrate_reference; //get yawrate input and apply to pitch
 			}
 
 			publish_rates_setpoint();

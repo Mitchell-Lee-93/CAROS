@@ -42,5 +42,4 @@ px4_add_module(
 		LidarLitePWM.cpp
 	DEPENDS
 		drivers_rangefinder
-		#arch_io_pins # LidarLitePWM
 	)

@@ -35,7 +35,7 @@ if(NOT "${PX4_BOARD}" MATCHES "px4_io") # TODO: fix this hack (move uORB to plat
 
 	# this includes the generated topics directory
 	include_directories(${CMAKE_CURRENT_BINARY_DIR})
-
+        message(${CMAKE_CURRENT_BINARY_DIR})
 	px4_add_module(
 		MODULE modules__uORB
 		MAIN uorb

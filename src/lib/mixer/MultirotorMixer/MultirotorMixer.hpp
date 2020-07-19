@@ -34,6 +34,7 @@
 #pragma once
 
 #include <mixer/Mixer/Mixer.hpp>
+#include <matrix/matrix/math.hpp>
 
 /**
  * Supported multirotor geometries.
@@ -175,8 +176,8 @@ private:
 	 *
 	 * @return desaturation gain
 	 */
-	float compute_desaturation_gain(const float *desaturation_vector, const float *outputs, saturation_status &sat_status,
-					float min_output, float max_output) const;
+        //float compute_desaturation_gain(const float *desaturation_vector, const float *outputs, saturation_status &sat_status,
+        //				float min_output, float max_output) const;
 
 	/**
 	 * Minimize the saturation of the actuators by adding or substracting a fraction of desaturation_vector.
@@ -196,8 +197,8 @@ private:
 	 * @param max_output maximum desired value in outputs
 	 * @param reduce_only if true, only allow to reduce (substract) a fraction of desaturation_vector
 	 */
-	void minimize_saturation(const float *desaturation_vector, float *outputs, saturation_status &sat_status,
-				 float min_output = 0.f, float max_output = 1.f, bool reduce_only = false) const;
+        //void minimize_saturation(const float *desaturation_vector, float *outputs, saturation_status &sat_status,
+        //			 float min_output = 0.f, float max_output = 1.f, bool reduce_only = false) const;
 
 	/**
 	 * Mix roll, pitch, yaw, thrust and set the outputs vector.
@@ -206,7 +207,7 @@ private:
 	 * thrust is increased/decreased as much as required to meet the demanded roll/pitch.
 	 * Yaw is not allowed to increase the thrust, @see mix_yaw() for the exact behavior.
 	 */
-	inline void mix_airmode_rp(float roll, float pitch, float yaw, float thrust, float *outputs);
+        //inline void mix_airmode_rp(float roll, float pitch, float yaw, float thrust, float *outputs);
 
 	/**
 	 * Mix roll, pitch, yaw, thrust and set the outputs vector.
@@ -215,7 +216,7 @@ private:
 	 * thrust is increased/decreased as much as required to meet demanded the roll/pitch/yaw,
 	 * while giving priority to roll and pitch over yaw.
 	 */
-	inline void mix_airmode_rpy(float roll, float pitch, float yaw, float thrust, float *outputs);
+        //inline void mix_airmode_rpy(float roll, float pitch, float yaw, float thrust, float *outputs);
 
 	/**
 	 * Mix roll, pitch, yaw, thrust and set the outputs vector.
@@ -225,7 +226,7 @@ private:
 	 * Thrust can be reduced to unsaturate the upper side.
 	 * @see mix_yaw() for the exact yaw behavior.
 	 */
-	inline void mix_airmode_disabled(float roll, float pitch, float yaw, float thrust, float *outputs);
+        inline void mix_airmode_disabled(float roll, float pitch, float yaw, float thrust, float thrust_x, float alp, float *outputs);
 
 	/**
 	 * Mix yaw by updating an existing output vector (that already contains roll/pitch/thrust).
@@ -237,7 +238,7 @@ private:
 	 * @param yaw demanded yaw
 	 * @param outputs output vector that is updated
 	 */
-	inline void mix_yaw(float yaw, float *outputs);
+        //inline void mix_yaw(float yaw, float *outputs);
 
 	void update_saturation_status(unsigned index, bool clipping_high, bool clipping_low_roll_pitch, bool clipping_low_yaw);
 

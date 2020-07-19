@@ -68,6 +68,7 @@ void PositionControl::setState(const PositionControlStates &states)
 	_pos = states.position;
 	_vel = states.velocity;
 	_yaw = states.yaw;
+    _pitch = states.pitch; //added 2020.06.16
 	_vel_dot = states.acceleration;
 }
 
@@ -118,7 +119,7 @@ bool PositionControl::update(const float dt)
 	return valid && _updateSuccessful();
 }
 
-void PositionControl::_positionControl()
+void PositionControl::_positionControl()//in Intertial frame
 {
 	// P-position controller
 	Vector3f vel_sp_position = (_pos_sp - _pos).emult(_gain_pos_p);
@@ -134,7 +135,7 @@ void PositionControl::_positionControl()
 	_vel_sp(2) = math::constrain(_vel_sp(2), -_constraints.speed_up, _constraints.speed_down);
 }
 
-void PositionControl::_velocityControl(const float dt)
+void PositionControl::_velocityControl(const float dt)//in Intertial frame
 {
 	// Generate desired thrust setpoint.
 	// PID
@@ -251,8 +252,10 @@ void PositionControl::getLocalPositionSetpoint(vehicle_local_position_setpoint_s
 	_thr_sp.copyTo(local_position_setpoint.thrust);
 }
 
-void PositionControl::getAttitudeSetpoint(vehicle_attitude_setpoint_s &attitude_setpoint) const
+void PositionControl::getAttitudeSetpoint(vehicle_attitude_setpoint_s &attitude_setpoint,float current_alp) const
 {
-	ControlMath::thrustToAttitude(_thr_sp, _yaw_sp, attitude_setpoint);
+    //PX4_INFO("pitch_T2A %f", (double) -_pitch);
+    ControlMath::thrustToAttitude(_thr_sp, _yaw_sp, -_pitch, current_alp, attitude_setpoint); //_thr_sp is in inertial frame, -pitch for opposite direction. it's pitch in z up,x north frame
+   // ControlMath::thrustToAttitude(_thr_sp, _yaw_sp, -1.55f, attitude_setpoint); //_thr_sp is in inertial frame
 	attitude_setpoint.yaw_sp_move_rate = _yawspeed_sp;
 }

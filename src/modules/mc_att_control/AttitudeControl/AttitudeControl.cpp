@@ -100,7 +100,10 @@ matrix::Vector3f AttitudeControl::update(matrix::Quatf q, matrix::Quatf qd, cons
 	// and multiply it by the yaw setpoint rate (yaw_sp_move_rate).
 	// This yields a vector representing the commanded rotatation around the world z-axis expressed in the body frame
 	// such that it can be added to the rates setpoint.
-	rate_setpoint += q.inversed().dcm_z() * yawspeed_feedforward;
+    //rate_setpoint(1) += q.inversed().dcm_y() * yawspeed_feedforward;
+    //added 2020.02.15. if no rotation, qinv.dcm_y =[0,1,0]
+
+    rate_setpoint(1) += 0.5f * yawspeed_feedforward; //assume body_rate_set has same axis of world_rate_set, added 2020.06.24
 
 	// limit rates
 	for (int i = 0; i < 3; i++) {

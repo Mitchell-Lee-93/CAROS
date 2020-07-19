@@ -1,0 +1,9 @@
+20:53
+ javsim 에 mix, matrix, controller 옮겼는데 안됌. arming은 
+
+20:55
+ javsim 에 원래 mix,matrix 사용 -> 펌웨어 연결이 안됌.
+ 
+21:27
+ 기본 firmware은 연결 잘 됌. 다시 변경시 안됌
+lib matrix에 문제생겻던 print 떄문 같음

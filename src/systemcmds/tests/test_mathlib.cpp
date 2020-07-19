@@ -174,9 +174,9 @@ bool MathlibTest::testMatrixNonsymmetric()
 
 		if (m1 + m2 != m3) {
 			PX4_ERR("matrix::Matrix<float, 2, 3> + matrix::Matrix<float, 2, 3> failed!");
-			(m1 + m2).print();
+			//(m1 + m2).print();
 			printf("!=\n");
-			m3.print();
+			//m3.print();
 			rc = false;
 		}
 
@@ -184,9 +184,9 @@ bool MathlibTest::testMatrixNonsymmetric()
 
 		if (m3 - m2 != m1) {
 			PX4_ERR("matrix::Matrix<float, 2, 3> - matrix::Matrix<float, 2, 3> failed!");
-			(m3 - m2).print();
+			//(m3 - m2).print();
 			printf("!=\n");
-			m1.print();
+			//m1.print();
 			rc = false;
 		}
 
@@ -196,9 +196,9 @@ bool MathlibTest::testMatrixNonsymmetric()
 
 		if (m1 != m3) {
 			PX4_ERR("matrix::Matrix<float, 2, 3> += matrix::Matrix<float, 2, 3> failed!");
-			m1.print();
+			//m1.print();
 			printf("!=\n");
-			m3.print();
+			//m3.print();
 			rc = false;
 		}
 
@@ -209,9 +209,9 @@ bool MathlibTest::testMatrixNonsymmetric()
 
 		if (m1 != m1_orig) {
 			PX4_ERR("matrix::Matrix<float, 2, 3> -= matrix::Matrix<float, 2, 3> failed!");
-			m1.print();
+			//m1.print();
 			printf("!=\n");
-			m1_orig.print();
+			//m1_orig.print();
 			rc = false;
 		}
 

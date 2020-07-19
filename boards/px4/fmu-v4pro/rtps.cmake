@@ -28,10 +28,7 @@ px4_add_board(
 		gps
 		#heater
 		#imu # all available imu drivers
-		imu/invensense/icm20602
-		imu/invensense/icm20608g
-		#imu/invensense/mpu9250
-		#imu/mpu6000 # legacy icm20602/icm20608g driver
+		imu/mpu6000
 		imu/mpu9250
 		irlock
 		lights/blinkm
@@ -40,8 +37,7 @@ px4_add_board(
 		#lights/rgbled_pwm
 		magnetometer # all available magnetometer drivers
 		mkblctrl
-		#optical_flow # all available optical flow drivers
-		optical_flow/px4flow
+		optical_flow # all available optical flow drivers
 		#osd
 		pca9685
 		power_monitor/ina226
@@ -83,7 +79,6 @@ px4_add_board(
 		sensors
 		sih
 		temperature_compensation
-		uuv_att_control
 		vmount
 		vtol_att_control
 	SYSTEMCMDS

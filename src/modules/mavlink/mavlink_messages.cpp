@@ -110,6 +110,7 @@
 #include <uORB/topics/vehicle_trajectory_waypoint.h>
 #include <uORB/topics/vtol_vehicle_status.h>
 #include <uORB/topics/wind_estimate.h>
+#include <uORB/topics/key_command.h>
 
 using matrix::Vector3f;
 using matrix::wrap_2pi;
@@ -2833,6 +2834,66 @@ protected:
 		return false;
 	}
 };
+//added 2020.02.27 mavlink publisher
+class MavlinkStreamKeyboardCommand : public MavlinkStream
+{
+public:
+    const char *get_name() const override
+    {
+        return MavlinkStreamKeyboardCommand::get_name_static();
+    }
+    static const char *get_name_static()
+    {
+        return "KEY_COMMAND";
+    }
+    static uint16_t get_id_static()
+    {
+        return MAVLINK_MSG_ID_KEY_COMMAND;
+    }
+    uint16_t get_id() override
+    {
+        return get_id_static();
+    }
+    static MavlinkStream *new_instance(Mavlink *mavlink)
+    {
+        return new MavlinkStreamKeyboardCommand(mavlink);
+    }
+    unsigned get_size() override
+    {
+        return MAVLINK_MSG_ID_KEY_COMMAND_LEN + MAVLINK_NUM_NON_PAYLOAD_BYTES;
+    }
+
+private:
+    MavlinkOrbSubscription *_sub;
+    uint64_t _key_command_time;
+
+    /* do not allow top copying this class */
+    MavlinkStreamKeyboardCommand(MavlinkStreamKeyboardCommand &) = delete;
+    MavlinkStreamKeyboardCommand &operator = (const MavlinkStreamKeyboardCommand &)= delete;
+
+protected:
+    explicit MavlinkStreamKeyboardCommand(Mavlink *mavlink) : MavlinkStream(mavlink),
+        _sub(_mavlink->add_orb_subscription(ORB_ID(key_command))),  // make sure you enter the name of your uORB topic here
+        _key_command_time(0)
+    {}
+
+    bool send(const hrt_abstime t) override
+    {
+        struct key_command_s servo ;    //make sure ca_traj_struct_s is the definition of your uORB topic
+
+        if (_sub->update(&_key_command_time, &servo)) {
+            mavlink_key_command_t _msg_key_command = {};  //make sure is the definition of your custom MAVLink message
+
+            _msg_key_command.time_usec = servo.timestamp;
+            _msg_key_command.servo = servo.servo_angle;
+
+            mavlink_msg_key_command_send_struct(_mavlink->get_channel(), &_msg_key_command);
+		return true;
+	}
+
+        return false;
+    }
+};
 
 
 class MavlinkStreamHomePosition : public MavlinkStream
@@ -3516,7 +3577,17 @@ protected:
 			mavlink_attitude_target_t msg = {};
 
 			msg.time_boot_ms = att_sp.timestamp / 1000;
-			matrix::Quatf(att_sp.q_d).copyTo(msg.q);
+
+			if (att_sp.q_d_valid) {
+				memcpy(&msg.q[0], &att_sp.q_d[0], sizeof(msg.q));
+
+			} else {
+				matrix::Quatf q = matrix::Eulerf(att_sp.roll_body, att_sp.pitch_body, att_sp.yaw_body);
+
+				for (size_t i = 0; i < 4; i++) {
+					msg.q[i] = q(i);
+				}
+			}
 
 			msg.body_roll_rate = att_rates_sp.roll;
 			msg.body_pitch_rate = att_rates_sp.pitch;
@@ -5173,6 +5244,7 @@ static const StreamListItem streams_list[] = {
 	StreamListItem(&MavlinkStreamGroundTruth::new_instance, &MavlinkStreamGroundTruth::get_name_static, &MavlinkStreamGroundTruth::get_id_static),
 	StreamListItem(&MavlinkStreamPing::new_instance, &MavlinkStreamPing::get_name_static, &MavlinkStreamPing::get_id_static),
 	StreamListItem(&MavlinkStreamOrbitStatus::new_instance, &MavlinkStreamOrbitStatus::get_name_static, &MavlinkStreamOrbitStatus::get_id_static),
+	StreamListItem(&MavlinkStreamKeyboardCommand::new_instance,   &MavlinkStreamKeyboardCommand::get_name_static, &MavlinkStreamKeyboardCommand::get_id_static),
 	StreamListItem(&MavlinkStreamObstacleDistance::new_instance, &MavlinkStreamObstacleDistance::get_name_static, &MavlinkStreamObstacleDistance::get_id_static)
 };
 
