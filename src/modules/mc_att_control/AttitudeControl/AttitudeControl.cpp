@@ -103,7 +103,7 @@ matrix::Vector3f AttitudeControl::update(matrix::Quatf q, matrix::Quatf qd, cons
     //rate_setpoint(1) += q.inversed().dcm_y() * yawspeed_feedforward;
     //added 2020.02.15. if no rotation, qinv.dcm_y =[0,1,0]
 
-    rate_setpoint(1) += 0.5f * yawspeed_feedforward; //assume body_rate_set has same axis of world_rate_set, added 2020.06.24
+    rate_setpoint(1) += 3.0f * yawspeed_feedforward; //assume body_rate_set has same axis of world_rate_set, added 2020.06.24
 
 	// limit rates
 	for (int i = 0; i < 3; i++) {

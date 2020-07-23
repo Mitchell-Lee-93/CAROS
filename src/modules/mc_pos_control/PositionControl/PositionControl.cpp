@@ -255,7 +255,7 @@ void PositionControl::getLocalPositionSetpoint(vehicle_local_position_setpoint_s
 void PositionControl::getAttitudeSetpoint(vehicle_attitude_setpoint_s &attitude_setpoint,float current_alp) const
 {
     //PX4_INFO("pitch_T2A %f", (double) -_pitch);
-    ControlMath::thrustToAttitude(_thr_sp, _yaw_sp, -_pitch, current_alp, attitude_setpoint); //_thr_sp is in inertial frame, -pitch for opposite direction. it's pitch in z up,x north frame
+    ControlMath::thrustToAttitude((_thr_sp+Vector3f(0,0,-0.5)), _yaw_sp, -_pitch, current_alp, attitude_setpoint); //_thr_sp is in inertial frame, -pitch for opposite direction. it's pitch in z up,x north frame
    // ControlMath::thrustToAttitude(_thr_sp, _yaw_sp, -1.55f, attitude_setpoint); //_thr_sp is in inertial frame
 	attitude_setpoint.yaw_sp_move_rate = _yawspeed_sp;
 }

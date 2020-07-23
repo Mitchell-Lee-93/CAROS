@@ -123,6 +123,8 @@ void thrustToAttitude(const Vector3f &thr_sp, const float yaw_sp, const float pi
 //    //only y,z are coupled, thr_sp(1) : F_y in inertial frame, added 2020.02.14
 
     //modified 2020.06.16, initial frame to body frame
+    double pitch_deg = pitch_current*180.0f/3.14f;
+    PX4_INFO("pitch_deg : %f \n", (double)pitch_deg); //added 2020.07.16
     if (alp_current>0.0f && alp_current<1.0f) //added 2020.07.19 if alp exist, run x-pitch decouple
     {
     bodyzToAttitude(-(thr_sp-Vector3f(thr_sp(0),0,0)), yaw_sp, att_sp);//body_z except thr_x
@@ -130,12 +132,10 @@ void thrustToAttitude(const Vector3f &thr_sp, const float yaw_sp, const float pi
     float z_tmp = -sqrtf(thr_sp(1)*thr_sp(1)+thr_sp(2)*thr_sp(2));//-0.4f; //tmp body frame to make thr_y = 0 for test
     //PX4_INFO("thr_x_raw : %f", (double)x_tmp);
     //PX4_INFO("thr_z_raw : %f", (double)z_tmp);
-    double pitch_deg = pitch_current*180.0f/3.14f;
-    PX4_INFO("pitch_deg : %f \n", (double)pitch_deg); //added 2020.07.16
     att_sp.thrust_body[0] = x_tmp*cosf(pitch_current)-z_tmp*sinf(pitch_current); //rotate temp body frame theta to make full body frame
     if(fabsf(att_sp.thrust_body[0])<0.0001f) att_sp.thrust_body[0]=0.0f;//added 2020.06.16, becuz of error with small F_x term
     att_sp.thrust_body[2] = x_tmp*sinf(pitch_current)+z_tmp*cosf(pitch_current);
-
+    //PX4_INFO("decouple \n" );
     //PX4_INFO("thr_x : %f", (double)att_sp.thrust_body[0] );
     //PX4_INFO("thr_z : %f", (double)att_sp.thrust_body[2] );
     }
@@ -144,6 +144,7 @@ void thrustToAttitude(const Vector3f &thr_sp, const float yaw_sp, const float pi
         bodyzToAttitude(-thr_sp, yaw_sp, att_sp);
         att_sp.thrust_body[0] = 0.0f; // resest Fx
         att_sp.thrust_body[2] = -thr_sp.length();
+    //PX4_INFO("couple \n" );
     }
 }
 

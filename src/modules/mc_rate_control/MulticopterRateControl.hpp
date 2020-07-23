@@ -77,7 +77,7 @@ public:
 	/** @see ModuleBase */
 	static int print_usage(const char *reason = nullptr);
 
-	bool init();
+    bool init();
 
 private:
 	void Run() override;
@@ -123,7 +123,7 @@ private:
 	bool _landed{true};
 	bool _maybe_landed{true};
 
-	float _battery_status_scale{0.0f};
+    float _battery_status_scale{0.0f};
 
 	perf_counter_t	_loop_perf;			/**< loop duration performance counter */
 
@@ -140,7 +140,8 @@ private:
 	hrt_abstime _task_start{hrt_absolute_time()};
 	hrt_abstime _last_run{0};
 	float _dt_accumulator{0.0f};
-	int _loop_counter{0};
+    int _loop_counter{0};
+    static float print_index;
 
 	DEFINE_PARAMETERS(
 		(ParamFloat<px4::params::MC_ROLLRATE_P>) _param_mc_rollrate_p,

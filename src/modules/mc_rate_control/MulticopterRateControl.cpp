@@ -42,6 +42,8 @@ using namespace matrix;
 using namespace time_literals;
 using math::radians;
 
+float MulticopterRateControl::print_index;
+
 MulticopterRateControl::MulticopterRateControl(bool vtol) :
 	ModuleParams(nullptr),
 	WorkItem(MODULE_NAME, px4::wq_configurations::rate_ctrl),
@@ -324,13 +326,8 @@ MulticopterRateControl::Run()
 			actuators.timestamp = hrt_absolute_time();
 			_actuators_0_pub.publish(actuators);
 
-            //added 2020.07.16 to check alp
-            PX4_INFO("My : %f \n", (double) actuators.control[actuator_controls_s::INDEX_PITCH] );
-            PX4_INFO("Fx : %f \n", (double) actuators.control[actuator_controls_s::INDEX_FLAPS] );
-            PX4_INFO("Fz : %f \n", (double) actuators.control[actuator_controls_s::INDEX_THROTTLE]);
-
             //alp pub added 03.02
-            float My = actuators.control[actuator_controls_s::INDEX_PITCH];
+            float My = 0;//actuators.control[actuator_controls_s::INDEX_PITCH];//fortest
             float Fz = actuators.control[actuator_controls_s::INDEX_THROTTLE];
             float Fx = actuators.control[actuator_controls_s::INDEX_FLAPS];
             //float alp = -2.0f*atanf((21.0f*Fz - 5.0f*Fx + 100.0f*My - sqrtf((297.0f*Fx*Fx-210.0f*Fx*Fz + 1000.0f*Fx*My + 441.0f*Fz*Fz + 4200.0f*Fz*My + 10000.0f*My*My)))/(8.0f*Fx));
@@ -343,10 +340,20 @@ MulticopterRateControl::Run()
                          else if (alp>1.0f){ // exceeding hardware limit, 150<alp<180
                              alp=1.0f;
                          }
-                         if(sqrtf(Fx*Fx+Fz*Fz)<0.4f){//when take off or landing
-                              alp = 0.0f;
-                         }
- PX4_INFO("alp : %f \n", (double) alp );
+//                         if(sqrtf(Fx*Fx+Fz*Fz)<0.4f){//when take off or landing,fortest
+//                              alp = 0.0f;
+//                         }
+
+            print_index=print_index+1;
+            //added 2020.07.16 to check alp
+            if(print_index>1000){
+             PX4_INFO("My : %f \n", (double) actuators.control[actuator_controls_s::INDEX_PITCH] );
+             PX4_INFO("Fx : %f \n", (double) actuators.control[actuator_controls_s::INDEX_FLAPS] );
+             PX4_INFO("Fz : %f \n", (double) actuators.control[actuator_controls_s::INDEX_THROTTLE]);
+             PX4_INFO("alp : %f \n", (double) alp );
+            print_index=0;
+            }
+
              _servo.servo_angle=alp;
              _servo.timestamp=hrt_absolute_time();
              _key_command_pub.publish(_servo);

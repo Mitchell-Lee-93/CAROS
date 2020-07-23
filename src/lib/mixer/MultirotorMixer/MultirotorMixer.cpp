@@ -374,7 +374,7 @@ MultirotorMixer::mix(float *outputs, unsigned space)
     }
 
 
-    float My = get_control(0, 1);//pitch, control group 0 , index 1(pitch)
+    float My = get_control(0, 1);//pitch, control group 0 , index 1(pitch), My opposit direction
     float Fz = get_control(0, 3);//thrust
     float Fx = get_control(0, 4);//flaps, Fx
 
