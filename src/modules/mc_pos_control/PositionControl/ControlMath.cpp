@@ -125,8 +125,8 @@ void thrustToAttitude(const Vector3f &thr_sp, const float yaw_sp, const float pi
     //modified 2020.06.16, initial frame to body frame
     double pitch_deg = pitch_current*180.0f/3.14f;
     PX4_INFO("pitch_deg : %f \n", (double)pitch_deg); //added 2020.07.16
-    if (alp_current>0.0f && alp_current<1.0f) //added 2020.07.19 if alp exist, run x-pitch decouple
-    {
+//    if (alp_current>0.0f && alp_current<1.0f) //added 2020.07.19 if alp exist, run x-pitch decouple fortest
+//    {
     bodyzToAttitude(-(thr_sp-Vector3f(thr_sp(0),0,0)), yaw_sp, att_sp);//body_z except thr_x
     float x_tmp = -thr_sp(0); //tmp body frame to make thr_y = 0
     float z_tmp = -sqrtf(thr_sp(1)*thr_sp(1)+thr_sp(2)*thr_sp(2));//-0.4f; //tmp body frame to make thr_y = 0 for test
@@ -138,14 +138,14 @@ void thrustToAttitude(const Vector3f &thr_sp, const float yaw_sp, const float pi
     //PX4_INFO("decouple \n" );
     //PX4_INFO("thr_x : %f", (double)att_sp.thrust_body[0] );
     //PX4_INFO("thr_z : %f", (double)att_sp.thrust_body[2] );
-    }
-    else //added 2020.07.19 if alp doesn't exist, run x-pitch couple
-    {
-        bodyzToAttitude(-thr_sp, yaw_sp, att_sp);
-        att_sp.thrust_body[0] = 0.0f; // resest Fx
-        att_sp.thrust_body[2] = -thr_sp.length();
-    //PX4_INFO("couple \n" );
-    }
+//    }
+//    else //added 2020.07.19 if alp doesn't exist, run x-pitch couple  //fortest 2020.07.28
+//    {
+//        bodyzToAttitude(-thr_sp, yaw_sp, att_sp);
+//        att_sp.thrust_body[0] = 0.0f; // resest Fx
+//        att_sp.thrust_body[2] = -thr_sp.length();
+//    //PX4_INFO("couple \n" );
+//    }
 }
 
 void bodyzToAttitude(Vector3f body_z, const float yaw_sp, vehicle_attitude_setpoint_s &att_sp)
